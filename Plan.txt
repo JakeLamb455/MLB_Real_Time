@@ -1,0 +1,4 @@
+Output variables: Zone Code (broken down into four quadrants), pitch_type
+
+Predictors: pitcher, batter, pitch_number (cum_count of pitches thrown), inning, balls, strikes, last_pitch_type (pitch type thrown directly before), outs_when_up, inning_topbot,fld_score-bat_score, on_1b, on_2b, on_3b, if_fielding_alignment, of_fielding_alignment
+
