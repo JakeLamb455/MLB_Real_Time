@@ -1,0 +1,19 @@
+import statsapi
+def get_padres_pitchers():
+    team_id = 135  # San Diego Padres
+    roster = statsapi.get('team_roster', {'teamId': team_id})
+    
+    pitchers = []
+    for player in roster.get('roster', []):
+        if player['position']['type'] == 'Pitcher':
+            pitchers.append({
+                'id': player['person']['id'],
+                'name': player['person']['fullName']
+            })
+    return pitchers
+
+if __name__ == "__main__":
+    pitchers = get_padres_pitchers()
+    print(f"Current Padres Pitchers ({len(pitchers)}):")
+    for p in pitchers:
+        print(f"- {p['name']} (ID: {p['id']})")
