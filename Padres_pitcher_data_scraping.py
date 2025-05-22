@@ -17,6 +17,8 @@ def get_padres_pitchers():
             })
     return pitchers
 
+pitchers = get_padres_pitchers()
+
 import pandas as pd
 from pybaseball import statcast_pitcher
 from datetime import datetime
