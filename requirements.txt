@@ -7,3 +7,4 @@ pybaseball
 statsmodels
 streamlit
 joblib
+xgboost
