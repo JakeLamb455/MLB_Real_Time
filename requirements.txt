@@ -6,3 +6,4 @@ mlb-statsapi
 pybaseball
 statsmodels
 streamlit
+joblib
