@@ -74,6 +74,22 @@ def get_next_padres_pitch_context(game_id, padres_pitcher_ids):
     return None
 
 data = get_next_padres_pitch_context(game_id, pitcher_ids)
+if data is None:
+    data = features = {
+                    'pitcher': '605397',
+                    'batter': '606466',
+                    'on_1b': 1,
+                    'on_2b': 0,
+                    'on_3b': 0,
+                    'if_fielding_alignment': 'standard',
+                    'of_fielding_alignment': 'standard',
+                    'prev_pitch_type': 'FF',
+                    'inning': 3,
+                    'balls': 2,
+                    'strikes': 2,
+                    'outs_when_up': 1,
+                    'score_diff': 3
+                }
 input_df = pd.DataFrame([data])
 
 encode_dict = {0: 'CH',
@@ -108,3 +124,4 @@ if st.button("Predict Pitch Type"):
     pitch_type = encode_dict.get(prediction[0])
     name_of_pitch = code_to_name.get(pitch_type)
     st.write(f"Predicted pitch type: {name_of_pitch}")
+    st.write(f"Inputs: {data}")
