@@ -33,6 +33,13 @@ def get_next_padres_pitch_context(game_id, padres_pitcher_ids):
     all_plays = live_feed.get('allPlays', [])
     current_play = all_plays[-1]
 
+    play_events = current_play.get('playEvents', [])
+
+    if play_events:
+        prev_pitch_type = play_events[-1].get('details', {}).get('type', {}).get('code', 'firstPitch')
+    else:
+        prev_pitch_type = 'firstPitch'
+
     
     features = {
         'pitcher': current_play['matchup'].get('pitcher', {}).get('id', 'None'),
@@ -40,7 +47,9 @@ def get_next_padres_pitch_context(game_id, padres_pitcher_ids):
         'on_1b': int('postOnFirst' in current_play['matchup']),
         'on_2b': int('postOnSecond' in current_play['matchup']),
         'on_3b': int('postOnThird' in current_play['matchup']),
-        'prev_pitch_type': current_play['playEvents'][len(current_play['playEvents'])-1]['details']['type'].get('code', 'firstPitch'),
+        'if_fielding_alignment': current_play['matchup'].get('ifFieldingAlignment', 'standard'),
+        'of_fielding_alignment': current_play['matchup'].get('ofFieldingAlignment', 'standard'),
+        'prev_pitch_type': prev_pitch_type,
         'inning':  current_play['about'].get('inning'),
         'balls':  current_play['count'].get('balls'),
         'strikes': current_play['count'].get('strikes'),
