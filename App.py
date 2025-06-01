@@ -89,6 +89,11 @@ code_to_name = {'ST': 'Sweeper',
  'KC': 'Knuckleball',
  'FS': 'Split-finger'}
 
+pitcher_info = statsapi.get('person', {'personId': data['pitcher']})
+pitcher_name = pitcher_info['people'][0]['fullName']
+batter_info = statsapi.get('person', {'personId': data['batter']})
+batter_name = batter_info['people'][0]['fullName']
+
 prediction = model.predict(input_df)
 pitch_type = encode_dict.get(prediction[0])
 name_of_pitch = code_to_name.get(pitch_type)
@@ -102,4 +107,7 @@ if st.button("Predict Pitch Type"):
     name_of_pitch = code_to_name.get(pitch_type)
     st.write(f"Predicted pitch type: {name_of_pitch}")
     st.write(f"Inputs: {data}")
+    st.write(f"Pitcher Name: {pitcher_name}")
+    st.write(f"Batter Name: {batter_name}")
+
 
