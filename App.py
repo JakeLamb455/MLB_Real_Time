@@ -4,9 +4,20 @@ from datetime import date
 import pandas as pd
 import statsapi
 import joblib
+import sys
+print("Python version:", sys.version, flush=True)
+print("Starting app...", flush=True)
+
+import os
+print("Files in directory:", os.listdir("."), flush=True)
 
 app = FastAPI()
-model = joblib.load("best_pitch_model.pkl")
+try:
+    model = joblib.load("best_pitch_model.pkl")
+    print("Model loaded OK", flush=True)
+except Exception as e:
+    print(f"FAILED TO LOAD MODEL: {e}", flush=True)
+    model = None
 
 ENCODE_DICT = {0:"CH",1:"CU",2:"FC",3:"FF",4:"FS",5:"KC",6:"SI",7:"SL",8:"ST"}
 CODE_TO_NAME = {"ST":"Sweeper","CH":"Changeup","FF":"Four Seam Fastball","SI":"Sinker","SL":"Slider","FC":"Cutter","CU":"Curveball","KC":"Knuckleball","FS":"Split-finger"}
