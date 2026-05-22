@@ -348,8 +348,8 @@ async function runPrediction(fromAuto=false){
 function runDemo(){
   const keys=Object.keys(C2N);
   const rc=keys[Math.floor(Math.random()*keys.length)];
-  const d={pitcher:'605397',batter:'606466',on_1b:Math.random()>.6?1:0,on_2b:Math.random()>.75?1:0,on_3b:Math.random()>.9?1:0,if_fielding_alignment:'standard',of_fielding_alignment:'standard',prev_pitch_type:keys[Math.floor(Math.random()*keys.length)],inning:Math.ceil(Math.random()*9),balls:Math.floor(Math.random()*4),strikes:Math.floor(Math.random()*3),outs_when_up:Math.floor(Math.random()*3),score_diff:Math.floor(Math.random()*7)-3};
-  updateUI(d,'Dylan Cease','Yordan Alvarez');populateRaw(d);
+  const d={pitcher:'650633',batter:'606466',on_1b:Math.random()>.6?1:0,on_2b:Math.random()>.75?1:0,on_3b:Math.random()>.9?1:0,if_fielding_alignment:'standard',of_fielding_alignment:'standard',prev_pitch_type:keys[Math.floor(Math.random()*keys.length)],inning:Math.ceil(Math.random()*9),balls:Math.floor(Math.random()*4),strikes:Math.floor(Math.random()*3),outs_when_up:Math.floor(Math.random()*3),score_diff:Math.floor(Math.random()*7)-3};
+  updateUI(d,'Michael King','Yordan Alvarez');populateRaw(d);
   showResult(rc,C2N[rc],false);
   document.getElementById('rawToggle').style.display='block';
 }
