@@ -5,8 +5,6 @@ xgboost
 mlb-statsapi
 pybaseball
 statsmodels
-streamlit
 joblib
-xgboost
 uvicorn
 fastapi
