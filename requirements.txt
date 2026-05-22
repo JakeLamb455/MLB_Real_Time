@@ -8,3 +8,5 @@ statsmodels
 streamlit
 joblib
 xgboost
+uvicorn
+fastapi
