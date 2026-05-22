@@ -26,37 +26,40 @@ html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;justify-content:center;}
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,240,74,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(200,240,74,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
 .wrap{width:100%;max-width:900px;padding:0.75rem 1.25rem;position:relative;z-index:1;}
-
-/* Header row */
 .hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:0.5rem;}
 .hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;line-height:1;}
 .hdr-title span{color:var(--acc);}
+.hdr-right{display:flex;align-items:center;gap:0.5rem;}
 .live-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);border-radius:2px;padding:2px 8px;font-size:10px;letter-spacing:2px;color:var(--red);text-transform:uppercase;}
 .live-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite;}
-
-/* Two-column layout */
+/* Auto toggle */
+.auto-toggle{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;cursor:pointer;user-select:none;}
+.auto-toggle input{display:none;}
+.toggle-track{width:28px;height:14px;background:var(--bdr);border-radius:7px;position:relative;transition:background 0.2s;}
+.toggle-track.on{background:var(--acc);}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:10px;height:10px;background:var(--muted);border-radius:50%;transition:all 0.2s;}
+.toggle-track.on .toggle-thumb{left:16px;background:var(--bg);}
+/* Waiting pulse on result card */
+.result.waiting{border-color:var(--muted);animation:none;}
+.result.waiting .result-hdr{background:var(--surf2);}
+.result.waiting .result-hdr-label{color:var(--muted);}
+.result.waiting .result-code{color:var(--muted);animation:none;}
+.result.waiting .result-blink{background:var(--muted);}
+.countdown{font-size:10px;color:var(--muted);letter-spacing:1px;text-align:right;margin-bottom:0.3rem;min-height:14px;}
 .main{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;}
-
-/* Cards */
 .card{background:var(--surf);border:1px solid var(--bdr);border-radius:4px;padding:0.5rem 0.75rem;}
 .card-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:0.25rem;}
-
-/* Matchup */
 .matchup{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
 .player-name{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
 .pitcher-name{color:var(--acc);}
 .batter-name{color:var(--gold);text-align:right;}
 .vs{font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:900;color:var(--muted);flex-shrink:0;}
-
-/* Stats row */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);border-radius:4px;overflow:hidden;border:1px solid var(--bdr);margin-bottom:0.5rem;}
 .stat-cell{background:var(--surf);padding:0.4rem 0.6rem;}
 .stat-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:2px;}
 .stat-val{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;line-height:1;}
 .stat-val.acc{color:var(--acc);}
 .stat-val.gold{color:var(--gold);}
-
-/* Count + bases row */
 .count-bases{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0.5rem;margin-bottom:0.5rem;}
 .count-box{background:var(--surf);border:1px solid var(--bdr);border-radius:4px;padding:0.4rem 0.6rem;}
 .count-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:0.3rem;}
@@ -66,14 +69,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .dot.strike.on{background:var(--red);border-color:var(--red);box-shadow:0 0 6px var(--red);}
 .dot.out.on{background:var(--gold);border-color:var(--gold);box-shadow:0 0 6px var(--gold);}
 .bases-box{background:var(--surf);border:1px solid var(--bdr);border-radius:4px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;}
-
-/* Predict button */
-.btn{width:100%;padding:0.7rem;background:var(--acc);color:var(--bg);border:none;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;margin-bottom:0.5rem;}
+.btn{width:100%;padding:0.7rem;background:var(--acc);color:var(--bg);border:none;border-radius:4px;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.15s;margin-bottom:0.35rem;}
 .btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,240,74,0.25);}
 .btn:active{transform:translateY(0);}
 .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
-
-/* Result */
 .result{display:none;border:1px solid var(--acc);border-radius:4px;overflow:hidden;margin-bottom:0.5rem;}
 .result.show{display:block;animation:pop 0.3s ease both;}
 .result-hdr{background:var(--acc);padding:0.3rem 0.75rem;display:flex;align-items:center;justify-content:space-between;}
@@ -83,16 +82,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .result-code{font-family:'Barlow Condensed',sans-serif;font-size:3.5rem;font-weight:900;color:var(--acc);line-height:1;animation:scaleIn 0.3s ease both;}
 .result-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;color:var(--txt);letter-spacing:1px;text-transform:uppercase;}
 .result-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
-
-/* Legend */
 .legend{display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;}
 .leg{background:var(--surf);padding:0.3rem 0.4rem;text-align:center;transition:background 0.15s;}
 .leg:hover{background:var(--surf2);}
 .leg.active{background:rgba(200,240,74,0.1);}
 .leg-code{font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;color:var(--acc);line-height:1;}
 .leg-name{font-size:8px;color:var(--muted);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
-/* Raw toggle */
 .raw-toggle{background:none;border:1px solid var(--bdr);border-radius:4px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:0.3rem 0.6rem;cursor:pointer;transition:all 0.15s;text-transform:uppercase;width:100%;margin-bottom:0.35rem;}
 .raw-toggle:hover{border-color:var(--muted);color:var(--txt);}
 .raw-panel{display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:4px;padding:0.5rem 0.75rem;margin-bottom:0.5rem;}
@@ -101,17 +96,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .raw-row:last-child{border-bottom:none;}
 .raw-key{color:var(--muted);}
 .raw-val{color:var(--acc);}
-
-/* Error */
 .err{display:none;background:rgba(255,82,82,0.1);border:1px solid var(--red);border-radius:4px;padding:0.4rem 0.75rem;font-size:11px;color:var(--red);margin-bottom:0.4rem;}
 .err.show{display:block;}
-
-/* Spinner */
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--bg);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
-
-/* Scanline */
 .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(200,240,74,0.05),transparent);animation:scanline 8s linear infinite;pointer-events:none;z-index:999;}
-
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.15;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes pop{from{opacity:0;transform:scale(0.97);}to{opacity:1;transform:scale(1);}}
@@ -122,14 +110,18 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <body>
 <div class="scanline"></div>
 <div class="wrap">
-
-  <!-- Header -->
   <div class="hdr">
     <div class="hdr-title">Pitch <span>Predictor</span> <span style="font-size:0.9rem;color:var(--gold);font-weight:600;">· SD Padres</span></div>
-    <div class="live-badge" id="liveBadge"><div class="live-dot"></div><span id="liveText">Ready</span></div>
+    <div class="hdr-right">
+      <label class="auto-toggle" title="Auto-predict on every new pitch">
+        <input type="checkbox" id="autoCheck" onchange="toggleAuto()"/>
+        <div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div>
+        Auto
+      </label>
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div><span id="liveText">Ready</span></div>
+    </div>
   </div>
 
-  <!-- Matchup + diamond side by side -->
   <div class="main">
     <div class="card">
       <div class="card-label">Matchup</div>
@@ -145,8 +137,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         </div>
       </div>
     </div>
-
-    <!-- Mini diamond -->
     <div class="card" style="display:flex;align-items:center;justify-content:center;">
       <svg width="90" height="90" viewBox="0 0 100 100" fill="none">
         <path d="M12 82 Q50 10 88 82" stroke="#1e3524" stroke-width="1.5" fill="none"/>
@@ -164,7 +154,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
 
-  <!-- Stats row -->
   <div class="stats">
     <div class="stat-cell"><div class="stat-label">Inning</div><div class="stat-val acc" id="ctxInning">–</div></div>
     <div class="stat-cell"><div class="stat-label">Score Diff</div><div class="stat-val" id="ctxScore">–</div></div>
@@ -172,7 +161,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="stat-cell"><div class="stat-label">IF Align</div><div class="stat-val" id="ctxIF" style="font-size:0.85rem;">–</div></div>
   </div>
 
-  <!-- Count + bases -->
   <div class="count-bases">
     <div class="count-box"><div class="count-label">Balls</div><div class="dots" id="balls"><div class="dot ball"></div><div class="dot ball"></div><div class="dot ball"></div><div class="dot ball"></div></div></div>
     <div class="count-box"><div class="count-label">Strikes</div><div class="dots" id="strikes"><div class="dot strike"></div><div class="dot strike"></div><div class="dot strike"></div></div></div>
@@ -187,41 +175,37 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
 
-  <!-- Error -->
   <div class="err" id="errBanner"></div>
-
-  <!-- Button -->
+  <div class="countdown" id="countdown"></div>
   <button class="btn" id="predictBtn" onclick="runPrediction()">Predict Next Pitch</button>
 
-  <!-- Result -->
   <div class="result" id="resultCard">
-    <div class="result-hdr"><span class="result-hdr-label">Prediction</span><div class="result-blink"></div></div>
+    <div class="result-hdr"><span class="result-hdr-label" id="resultLabel">Prediction</span><div class="result-blink"></div></div>
     <div class="result-body">
       <div class="result-code" id="resultCode">FF</div>
-      <div><div class="result-name" id="resultName">Four Seam Fastball</div><div class="result-sub">Model output · Real-time</div></div>
+      <div><div class="result-name" id="resultName">Four Seam Fastball</div><div class="result-sub" id="resultSub">Model output · Real-time</div></div>
     </div>
   </div>
 
-  <!-- Raw toggle -->
   <button class="raw-toggle" id="rawToggle" onclick="toggleRaw()" style="display:none">▼ Show Input Features</button>
   <div class="raw-panel" id="rawPanel"></div>
-
-  <!-- Legend -->
   <div class="legend" id="legend"></div>
-
 </div>
+
 <script>
 const C2N={ST:'Sweeper',CH:'Changeup',FF:'Four Seam Fastball',SI:'Sinker',SL:'Slider',FC:'Cutter',CU:'Curveball',KC:'Knuckleball',FS:'Split-finger'};
-
-// Build legend
 const legEl=document.getElementById('legend');
-Object.entries(C2N).forEach(([c,n])=>{
-  const d=document.createElement('div');d.className='leg';d.id='leg-'+c;
-  d.innerHTML=`<div class="leg-code">${c}</div><div class="leg-name">${n}</div>`;
-  legEl.appendChild(d);
-});
+Object.entries(C2N).forEach(([c,n])=>{const d=document.createElement('div');d.className='leg';d.id='leg-'+c;d.innerHTML=`<div class="leg-code">${c}</div><div class="leg-name">${n}</div>`;legEl.appendChild(d);});
 
-function setDots(id,n,cls){document.querySelectorAll(`#${id} .dot`).forEach((d,i)=>{d.classList.remove('on');if(i<n)d.classList.add('on');});}
+// --- State ---
+let autoMode=false;
+let pollTimer=null;
+let countdownTimer=null;
+let lastFingerprint=null;  // tracks last seen play+pitch count
+let pollInterval=4000;     // ms between polls
+let countdownSec=0;
+
+function setDots(id,n){document.querySelectorAll(`#${id} .dot`).forEach((d,i)=>{d.classList.remove('on');if(i<n)d.classList.add('on');});}
 function setBase(id,on){const e=document.getElementById(id);if(!e)return;e.setAttribute('fill',on?'#c8f04a':'#1e3524');e.setAttribute('stroke',on?'#c8f04a':'#2e4a32');e.style.filter=on?'drop-shadow(0 0 5px rgba(200,240,74,0.8))'  :'';}
 
 function updateUI(d,pn,bn){
@@ -237,29 +221,97 @@ function updateUI(d,pn,bn){
   setBase('dBase1',d.on_1b);setBase('dBase2',d.on_2b);setBase('dBase3',d.on_3b);
 }
 
-function populateRaw(d){
-  document.getElementById('rawPanel').innerHTML=Object.entries(d).map(([k,v])=>`<div class="raw-row"><span class="raw-key">${k}</span><span class="raw-val">${v}</span></div>`).join('');
-}
-
-function toggleRaw(){
-  const p=document.getElementById('rawPanel'),b=document.getElementById('rawToggle');
-  p.classList.toggle('show');b.textContent=p.classList.contains('show')?'▲ Hide Input Features':'▼ Show Input Features';
-}
-
+function populateRaw(d){document.getElementById('rawPanel').innerHTML=Object.entries(d).map(([k,v])=>`<div class="raw-row"><span class="raw-key">${k}</span><span class="raw-val">${v}</span></div>`).join('');}
+function toggleRaw(){const p=document.getElementById('rawPanel'),b=document.getElementById('rawToggle');p.classList.toggle('show');b.textContent=p.classList.contains('show')?'▲ Hide Input Features':'▼ Show Input Features';}
 function showErr(msg){const e=document.getElementById('errBanner');e.textContent='⚠ '+msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),6000);}
+function setLive(txt,active=true){document.getElementById('liveBadge').innerHTML=`<div class="live-dot" style="${active?'':'background:var(--muted)'}"></div><span>${txt}</span>`;}
 
-function setLive(txt,active=true){
-  const dot=`<div class="live-dot" style="${active?'':'background:var(--muted)'}"></div>`;
-  document.getElementById('liveBadge').innerHTML=dot+'<span>'+txt+'</span>';
+function showResult(pitchCode,pitchName,waiting=false){
+  const card=document.getElementById('resultCard');
+  card.classList.remove('show','waiting');
+  void card.offsetWidth; // force reflow for animation replay
+  card.classList.add('show');
+  if(waiting)card.classList.add('waiting');
+  document.getElementById('resultCode').textContent=pitchCode;
+  document.getElementById('resultName').textContent=pitchName;
+  document.getElementById('resultLabel').textContent=waiting?'Waiting for pitch…':'Prediction';
+  document.getElementById('resultSub').textContent=waiting?'Pitch thrown — updating…':'Model output · Real-time';
+  document.querySelectorAll('.leg').forEach(l=>l.classList.remove('active'));
+  if(!waiting){const l=document.getElementById('leg-'+pitchCode);if(l)l.classList.add('active');}
 }
 
-async function runPrediction(){
+// --- Auto mode ---
+function toggleAuto(){
+  autoMode=document.getElementById('autoCheck').checked;
+  document.getElementById('toggleTrack').classList.toggle('on',autoMode);
+  if(autoMode){
+    setLive('Auto · On');
+    startPolling();
+  } else {
+    stopPolling();
+    setLive('Ready');
+    document.getElementById('countdown').textContent='';
+  }
+}
+
+function startPolling(){
+  stopPolling();
+  poll(); // immediate first poll
+}
+
+function stopPolling(){
+  if(pollTimer)clearTimeout(pollTimer);
+  if(countdownTimer)clearInterval(countdownTimer);
+  pollTimer=null;countdownTimer=null;
+}
+
+function startCountdown(sec){
+  if(countdownTimer)clearInterval(countdownTimer);
+  countdownSec=sec;
+  document.getElementById('countdown').textContent=`Next poll in ${countdownSec}s`;
+  countdownTimer=setInterval(()=>{
+    countdownSec--;
+    if(countdownSec<=0){clearInterval(countdownTimer);document.getElementById('countdown').textContent='Polling…';}
+    else document.getElementById('countdown').textContent=`Next poll in ${countdownSec}s`;
+  },1000);
+}
+
+async function poll(){
+  if(!autoMode)return;
+  try{
+    // Lightweight fingerprint check first
+    const res=await fetch('/fingerprint');
+    if(!res.ok)throw new Error('poll failed');
+    const {fingerprint,no_game}=await res.json();
+
+    if(no_game){
+      setLive('No game today',false);
+      document.getElementById('countdown').textContent='No Padres game in progress';
+      pollTimer=setTimeout(poll,30000); // check less often when no game
+      return;
+    }
+
+    if(fingerprint!==lastFingerprint){
+      // New pitch detected — run full prediction
+      lastFingerprint=fingerprint;
+      await runPrediction(true); // true = called from auto
+    } else {
+      setLive('Auto · Watching');
+    }
+  }catch(e){
+    setLive('Auto · Error',false);
+  }
+  if(autoMode){
+    startCountdown(Math.round(pollInterval/1000));
+    pollTimer=setTimeout(poll,pollInterval);
+  }
+}
+
+// --- Manual / auto prediction ---
+async function runPrediction(fromAuto=false){
   const btn=document.getElementById('predictBtn');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Analyzing…';
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('rawToggle').style.display='none';
-  document.getElementById('rawPanel').classList.remove('show');
-  document.querySelectorAll('.leg').forEach(l=>l.classList.remove('active'));
+  if(!fromAuto){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Analyzing…';}
+  if(!fromAuto){document.getElementById('rawToggle').style.display='none';document.getElementById('rawPanel').classList.remove('show');}
 
   try{
     const res=await fetch('/predict',{method:'POST'});
@@ -267,18 +319,18 @@ async function runPrediction(){
     const j=await res.json();
     updateUI(j.inputs,j.pitcher_name,j.batter_name);
     populateRaw(j.inputs);
-    document.getElementById('resultCode').textContent=j.pitch_code;
-    document.getElementById('resultName').textContent=j.pitch_name;
-    document.getElementById('resultCard').classList.add('show');
+    showResult(j.pitch_code,j.pitch_name,false);
     document.getElementById('rawToggle').style.display='block';
-    const l=document.getElementById('leg-'+j.pitch_code);if(l)l.classList.add('active');
-    setLive('Live data');
+    if(!fromAuto)setLive('Live data');
+    else setLive('Auto · Live');
   }catch(err){
-    showErr(err.message||'Failed to connect.');
-    setLive('Demo mode',false);
-    runDemo();
+    if(!fromAuto){
+      showErr(err.message||'Failed to connect.');
+      setLive('Demo mode',false);
+      runDemo();
+    }
   }finally{
-    btn.disabled=false;btn.textContent='Predict Next Pitch';
+    if(!fromAuto){btn.disabled=false;btn.textContent='Predict Next Pitch';}
   }
 }
 
@@ -287,12 +339,8 @@ function runDemo(){
   const rc=keys[Math.floor(Math.random()*keys.length)];
   const d={pitcher:'605397',batter:'606466',on_1b:Math.random()>.6?1:0,on_2b:Math.random()>.75?1:0,on_3b:Math.random()>.9?1:0,if_fielding_alignment:'standard',of_fielding_alignment:'standard',prev_pitch_type:keys[Math.floor(Math.random()*keys.length)],inning:Math.ceil(Math.random()*9),balls:Math.floor(Math.random()*4),strikes:Math.floor(Math.random()*3),outs_when_up:Math.floor(Math.random()*3),score_diff:Math.floor(Math.random()*7)-3};
   updateUI(d,'Dylan Cease','Yordan Alvarez');populateRaw(d);
-  document.getElementById('resultCode').textContent=rc;
-  document.getElementById('resultName').textContent=C2N[rc];
-  document.getElementById('resultCard').classList.add('show');
+  showResult(rc,C2N[rc],false);
   document.getElementById('rawToggle').style.display='block';
-  const l=document.getElementById('leg-'+rc);
-  if(l){document.querySelectorAll('.leg').forEach(x=>x.classList.remove('active'));l.classList.add('active');}
 }
 </script>
 </body>
@@ -303,14 +351,20 @@ def get_game_id():
     schedule = statsapi.schedule(start_date=date.today(), end_date=date.today(), team="135", sportId=1)
     return schedule[0]["game_id"] if schedule else None
 
-def get_pitch_context(game_id):
+def get_live_feed(game_id):
     live_feed = statsapi.get("game_playByPlay", {"gamePk": game_id})
     all_plays = live_feed.get("allPlays", [])
+    return all_plays
+
+def build_context(all_plays):
     if not all_plays:
         return None
     current_play = all_plays[-1]
     play_events = current_play.get("playEvents", [])
-    prev_pitch_type = (play_events[-1].get("details", {}).get("type", {}).get("code", "firstPitch") if play_events else "firstPitch")
+    prev_pitch_type = (
+        play_events[-1].get("details", {}).get("type", {}).get("code", "firstPitch")
+        if play_events else "firstPitch"
+    )
     home_score = current_play["result"].get("homeScore", 0) or 0
     away_score = current_play["result"].get("awayScore", 0) or 0
     return {
@@ -333,10 +387,27 @@ def get_pitch_context(game_id):
 async def serve_ui():
     return HTMLResponse(content=EMBEDDED_HTML)
 
+@app.get("/fingerprint")
+async def fingerprint():
+    """Lightweight endpoint — returns a fingerprint of the current game state.
+    The frontend polls this every few seconds; only calls /predict when it changes."""
+    game_id = get_game_id()
+    if not game_id:
+        return JSONResponse({"fingerprint": None, "no_game": True})
+    all_plays = get_live_feed(game_id)
+    if not all_plays:
+        return JSONResponse({"fingerprint": None, "no_game": False})
+    current_play = all_plays[-1]
+    play_idx = current_play.get("atBatIndex", 0)
+    pitch_count = len(current_play.get("playEvents", []))
+    fp = f"{play_idx}-{pitch_count}"
+    return JSONResponse({"fingerprint": fp, "no_game": False})
+
 @app.post("/predict")
 async def predict():
     game_id = get_game_id()
-    data = get_pitch_context(game_id) if game_id else None
+    all_plays = get_live_feed(game_id) if game_id else []
+    data = build_context(all_plays)
     used_fallback = data is None
     if used_fallback:
         data = FALLBACK_DATA.copy()
