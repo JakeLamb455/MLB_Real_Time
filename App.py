@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-from datetime import date
+from datetime import date, datetime, timedelta
+import pytz
 import pandas as pd
 import statsapi
 import joblib
@@ -22,6 +23,7 @@ except Exception as e:
 ENCODE_DICT = {0:"CH",1:"CU",2:"FC",3:"FF",4:"FS",5:"KC",6:"SI",7:"SL",8:"ST"}
 CODE_TO_NAME = {"ST":"Sweeper","CH":"Changeup","FF":"Four Seam Fastball","SI":"Sinker","SL":"Slider","FC":"Cutter","CU":"Curveball","KC":"Knuckleball","FS":"Split-finger"}
 FALLBACK_DATA = {"pitcher":"605397","batter":"606466","on_1b":0,"on_2b":0,"on_3b":0,"if_fielding_alignment":"standard","of_fielding_alignment":"standard","prev_pitch_type":"FF","inning":1,"balls":0,"strikes":0,"outs_when_up":0,"score_diff":0}
+PADRES_ID = 135
 
 EMBEDDED_HTML = r"""<!DOCTYPE html>
 <html lang="en">
@@ -43,14 +45,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .hdr-right{display:flex;align-items:center;gap:0.5rem;}
 .live-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);border-radius:2px;padding:2px 8px;font-size:10px;letter-spacing:2px;color:var(--red);text-transform:uppercase;}
 .live-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite;}
-/* Auto toggle */
 .auto-toggle{display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;cursor:pointer;user-select:none;}
 .auto-toggle input{display:none;}
 .toggle-track{width:28px;height:14px;background:var(--bdr);border-radius:7px;position:relative;transition:background 0.2s;}
 .toggle-track.on{background:var(--acc);}
 .toggle-thumb{position:absolute;top:2px;left:2px;width:10px;height:10px;background:var(--muted);border-radius:50%;transition:all 0.2s;}
 .toggle-track.on .toggle-thumb{left:16px;background:var(--bg);}
-/* Waiting pulse on result card */
 .result.waiting{border-color:var(--muted);animation:none;}
 .result.waiting .result-hdr{background:var(--surf2);}
 .result.waiting .result-hdr-label{color:var(--muted);}
@@ -111,6 +111,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .err.show{display:block;}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--bg);border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
 .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(transparent,rgba(200,240,74,0.05),transparent);animation:scanline 8s linear infinite;pointer-events:none;z-index:999;}
+
+/* ── No-game banner ── */
+.no-game-overlay{display:none;position:fixed;inset:0;background:rgba(6,13,8,0.92);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.no-game-overlay.show{display:flex;}
+.no-game-card{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:2rem 2.5rem;max-width:480px;width:90%;text-align:center;position:relative;overflow:hidden;}
+.no-game-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,240,74,0.04) 0%,transparent 60%);pointer-events:none;}
+.no-game-eyebrow{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:0.75rem;}
+.no-game-vs{font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;font-weight:900;line-height:1.1;margin-bottom:0.5rem;}
+.no-game-vs .home{color:var(--acc);}
+.no-game-vs .away{color:var(--gold);}
+.no-game-time{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;color:var(--txt);letter-spacing:1px;margin-bottom:0.25rem;}
+.no-game-date{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:1.25rem;}
+.no-game-divider{width:40px;height:1px;background:var(--bdr);margin:0 auto 1.25rem;}
+.no-game-starter-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:0.3rem;}
+.no-game-starter{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:700;color:var(--acc);letter-spacing:0.5px;}
+.no-game-starter-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:2px;}
+.no-game-none{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:0.5rem;}
+
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.15;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes pop{from{opacity:0;transform:scale(0.97);}to{opacity:1;transform:scale(1);}}
@@ -120,6 +138,22 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 </head>
 <body>
 <div class="scanline"></div>
+
+<!-- No-game overlay banner -->
+<div class="no-game-overlay" id="noGameOverlay">
+  <div class="no-game-card">
+    <div class="no-game-eyebrow">No game in progress</div>
+    <div class="no-game-vs" id="ngVs"><span class="home">—</span><br/><span style="font-size:1rem;color:var(--muted)">vs</span><br/><span class="away">—</span></div>
+    <div class="no-game-time" id="ngTime">—</div>
+    <div class="no-game-date" id="ngDate">—</div>
+    <div class="no-game-divider"></div>
+    <div class="no-game-starter-label">Probable Padres Starter</div>
+    <div class="no-game-starter" id="ngStarter">—</div>
+    <div class="no-game-starter-sub" id="ngStarterSub"></div>
+    <div class="no-game-none" id="ngNone" style="display:none">No upcoming games found</div>
+  </div>
+</div>
+
 <div class="wrap">
   <div class="hdr">
     <div class="hdr-title">Pitch <span>Predictor</span> <span style="font-size:0.9rem;color:var(--gold);font-weight:600;">· SD Padres</span></div>
@@ -208,12 +242,11 @@ const C2N={ST:'Sweeper',CH:'Changeup',FF:'Four Seam Fastball',SI:'Sinker',SL:'Sl
 const legEl=document.getElementById('legend');
 Object.entries(C2N).forEach(([c,n])=>{const d=document.createElement('div');d.className='leg';d.id='leg-'+c;d.innerHTML=`<div class="leg-code">${c}</div><div class="leg-name">${n}</div>`;legEl.appendChild(d);});
 
-// --- State ---
 let autoMode=false;
 let pollTimer=null;
 let countdownTimer=null;
-let lastFingerprint=null;  // tracks last seen play+pitch count
-let pollInterval=4000;     // ms between polls
+let lastFingerprint=null;
+let pollInterval=4000;
 let countdownSec=0;
 
 function setDots(id,n){document.querySelectorAll(`#${id} .dot`).forEach((d,i)=>{d.classList.remove('on');if(i<n)d.classList.add('on');});}
@@ -240,7 +273,7 @@ function setLive(txt,active=true){document.getElementById('liveBadge').innerHTML
 function showResult(pitchCode,pitchName,waiting=false){
   const card=document.getElementById('resultCard');
   card.classList.remove('show','waiting');
-  void card.offsetWidth; // force reflow for animation replay
+  void card.offsetWidth;
   card.classList.add('show');
   if(waiting)card.classList.add('waiting');
   document.getElementById('resultCode').textContent=pitchCode;
@@ -251,25 +284,55 @@ function showResult(pitchCode,pitchName,waiting=false){
   if(!waiting){const l=document.getElementById('leg-'+pitchCode);if(l)l.classList.add('active');}
 }
 
-// --- Auto mode ---
-function toggleAuto(){
-  autoMode=document.getElementById('autoCheck').checked;
-  document.getElementById('toggleTrack').classList.toggle('on',autoMode);
-  if(autoMode){
-    setLive('Auto · On');
-    startPolling();
-  } else {
-    stopPolling();
-    setLive('Ready');
-    document.getElementById('countdown').textContent='';
+// ── No-game banner ──
+async function checkAndShowNoGameBanner(){
+  try{
+    const res=await fetch('/next-game');
+    if(!res.ok)return;
+    const g=await res.json();
+    if(!g.no_game_today)return; // game is live, don't show banner
+
+    const overlay=document.getElementById('noGameOverlay');
+    overlay.classList.add('show');
+
+    if(!g.found){
+      document.getElementById('ngVs').innerHTML='<span style="color:var(--muted);font-size:1.2rem">No upcoming games found</span>';
+      document.getElementById('ngTime').textContent='';
+      document.getElementById('ngDate').textContent='';
+      document.getElementById('ngStarter').textContent='—';
+      document.getElementById('ngStarterSub').textContent='';
+      return;
+    }
+
+    // Matchup
+    const home=g.home_team, away=g.away_team;
+    document.getElementById('ngVs').innerHTML=
+      `<span class="home">${home}</span><br/><span style="font-size:1rem;color:var(--muted)">vs</span><br/><span class="away">${away}</span>`;
+    document.getElementById('ngTime').textContent=g.game_time_pst;
+    document.getElementById('ngDate').textContent=g.game_date;
+
+    // Starter
+    if(g.padres_starter){
+      document.getElementById('ngStarter').textContent=g.padres_starter;
+      document.getElementById('ngStarterSub').textContent='Probable Starter · PST';
+    } else {
+      document.getElementById('ngStarter').textContent='TBD';
+      document.getElementById('ngStarterSub').textContent='Starter not yet announced';
+    }
+  }catch(e){
+    console.warn('next-game check failed',e);
   }
 }
 
-function startPolling(){
-  stopPolling();
-  poll(); // immediate first poll
+// ── Auto mode ──
+function toggleAuto(){
+  autoMode=document.getElementById('autoCheck').checked;
+  document.getElementById('toggleTrack').classList.toggle('on',autoMode);
+  if(autoMode){setLive('Auto · On');startPolling();}
+  else{stopPolling();setLive('Ready');document.getElementById('countdown').textContent='';}
 }
 
+function startPolling(){stopPolling();poll();}
 function stopPolling(){
   if(pollTimer)clearTimeout(pollTimer);
   if(countdownTimer)clearInterval(countdownTimer);
@@ -290,44 +353,37 @@ function startCountdown(sec){
 async function poll(){
   if(!autoMode)return;
   try{
-    // Lightweight fingerprint check first
     const res=await fetch('/fingerprint');
     if(!res.ok)throw new Error('poll failed');
     const {fingerprint,no_game}=await res.json();
-
     if(no_game){
       setLive('No game today',false);
       document.getElementById('countdown').textContent='No Padres game in progress';
-      pollTimer=setTimeout(poll,30000); // check less often when no game
+      checkAndShowNoGameBanner();
+      pollTimer=setTimeout(poll,30000);
       return;
     }
-
-    if(fingerprint!==lastFingerprint){
-      // New pitch detected — run full prediction
-      lastFingerprint=fingerprint;
-      await runPrediction(true); // true = called from auto
-    } else {
-      setLive('Auto · Watching');
-    }
-  }catch(e){
-    setLive('Auto · Error',false);
-  }
-  if(autoMode){
-    startCountdown(Math.round(pollInterval/1000));
-    pollTimer=setTimeout(poll,pollInterval);
-  }
+    if(fingerprint!==lastFingerprint){lastFingerprint=fingerprint;await runPrediction(true);}
+    else setLive('Auto · Watching');
+  }catch(e){setLive('Auto · Error',false);}
+  if(autoMode){startCountdown(Math.round(pollInterval/1000));pollTimer=setTimeout(poll,pollInterval);}
 }
 
-// --- Manual / auto prediction ---
+// ── Prediction ──
 async function runPrediction(fromAuto=false){
   const btn=document.getElementById('predictBtn');
   if(!fromAuto){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Analyzing…';}
   if(!fromAuto){document.getElementById('rawToggle').style.display='none';document.getElementById('rawPanel').classList.remove('show');}
-
   try{
     const res=await fetch('/predict',{method:'POST'});
     if(!res.ok)throw new Error(`Server error: ${res.status}`);
     const j=await res.json();
+    // If server says no live game, show the banner instead
+    if(j.no_game){
+      checkAndShowNoGameBanner();
+      if(!fromAuto)setLive('No game',false);
+      return;
+    }
     updateUI(j.inputs,j.pitcher_name,j.batter_name);
     populateRaw(j.inputs);
     showResult(j.pitch_code,j.pitch_name,false);
@@ -353,46 +409,155 @@ function runDemo(){
   showResult(rc,C2N[rc],false);
   document.getElementById('rawToggle').style.display='block';
 }
+
+// On page load, immediately check if there's no game
+(async()=>{
+  try{
+    const res=await fetch('/fingerprint');
+    if(res.ok){
+      const {no_game}=await res.json();
+      if(no_game) checkAndShowNoGameBanner();
+    }
+  }catch(_){}
+})();
 </script>
 </body>
 </html>
 """
 
+# ── Helpers ──
+
 def get_game_id():
-    schedule = statsapi.schedule(start_date=date.today(), end_date=date.today(), team="135", sportId=1)
-    return schedule[0]["game_id"] if schedule else None
+    schedule = statsapi.schedule(start_date=date.today(), end_date=date.today(), team=str(PADRES_ID), sportId=1)
+    # Only return a game_id if the game is actually in progress (status = "In Progress")
+    for game in schedule:
+        if game.get("status") == "In Progress":
+            return game["game_id"]
+    return None
 
 def get_live_feed(game_id):
     live_feed = statsapi.get("game_playByPlay", {"gamePk": game_id})
-    all_plays = live_feed.get("allPlays", [])
-    return all_plays
+    return live_feed.get("allPlays", [])
 
-def build_context(all_plays):
+def get_next_game_info():
+    """Find the next scheduled Padres game (today if not started, or upcoming days)."""
+    pst = pytz.timezone("America/Los_Angeles")
+    today = date.today()
+
+    # Look ahead up to 14 days
+    for days_ahead in range(0, 15):
+        check_date = today + timedelta(days=days_ahead)
+        date_str = check_date.strftime("%Y-%m-%d")
+        try:
+            schedule = statsapi.schedule(
+                start_date=date_str, end_date=date_str,
+                team=str(PADRES_ID), sportId=1
+            )
+        except Exception:
+            continue
+
+        for game in schedule:
+            status = game.get("status", "")
+            # Skip games already finished or in progress
+            if status in ("Final", "Game Over", "In Progress", "Completed Early"):
+                continue
+
+            game_id = game["game_id"]
+            home_id = game.get("home_id")
+            away_name = game.get("away_name", "Unknown")
+            home_name = game.get("home_name", "Unknown")
+            game_datetime_str = game.get("game_datetime", "")  # UTC ISO string
+
+            # Convert game time to PST
+            game_time_pst = "TBD"
+            game_date_label = check_date.strftime("%A, %B %-d")
+            try:
+                if game_datetime_str:
+                    utc_dt = datetime.strptime(game_datetime_str, "%Y-%m-%dT%H:%M:%SZ")
+                    utc_dt = pytz.utc.localize(utc_dt)
+                    pst_dt = utc_dt.astimezone(pst)
+                    game_time_pst = pst_dt.strftime("%-I:%M %p PST")
+                    game_date_label = pst_dt.strftime("%A, %B %-d")
+            except Exception:
+                pass
+
+            # Probable pitcher for Padres
+            padres_starter = None
+            try:
+                if home_id == PADRES_ID:
+                    padres_starter = game.get("home_probable_pitcher", None)
+                else:
+                    padres_starter = game.get("away_probable_pitcher", None)
+            except Exception:
+                pass
+
+            return {
+                "found": True,
+                "no_game_today": True,
+                "game_date": game_date_label,
+                "game_time_pst": game_time_pst,
+                "home_team": home_name,
+                "away_team": away_name,
+                "padres_starter": padres_starter or None,
+            }
+
+    return {"found": False, "no_game_today": True}
+
+def build_context(all_plays, game_id):
     if not all_plays:
         return None
+
     current_play = all_plays[-1]
+    matchup = current_play.get("matchup", {})
     play_events = current_play.get("playEvents", [])
-    prev_pitch_type = (
-        play_events[-1].get("details", {}).get("type", {}).get("code", "firstPitch")
-        if play_events else "firstPitch"
-    )
-    home_score = current_play["result"].get("homeScore", 0) or 0
-    away_score = current_play["result"].get("awayScore", 0) or 0
+
+    pitch_events = [e for e in play_events if e.get("isPitch", False)]
+
+    if len(pitch_events) >= 2:
+        prev_pitch_type = pitch_events[-2].get("details", {}).get("type", {}).get("code", "FF")
+    elif len(all_plays) >= 2:
+        prev_play_events = all_plays[-2].get("playEvents", [])
+        prev_pitches = [e for e in prev_play_events if e.get("isPitch", False)]
+        prev_pitch_type = (
+            prev_pitches[-1].get("details", {}).get("type", {}).get("code", "FF")
+            if prev_pitches else "FF"
+        )
+    else:
+        prev_pitch_type = "FF"
+
+    runners = current_play.get("runners", [])
+    occupied = {r.get("movement", {}).get("end") for r in runners}
+    on_1b = int("1B" in occupied or "postOnFirst" in matchup)
+    on_2b = int("2B" in occupied or "postOnSecond" in matchup)
+    on_3b = int("3B" in occupied or "postOnThird" in matchup)
+
+    try:
+        linescore = statsapi.get("game_linescore", {"gamePk": game_id})
+        home_team_id = linescore["teams"]["home"]["team"]["id"]
+        home_score = linescore["teams"]["home"].get("runs", 0) or 0
+        away_score = linescore["teams"]["away"].get("runs", 0) or 0
+        score_diff = (home_score - away_score) if home_team_id == PADRES_ID else (away_score - home_score)
+    except Exception as e:
+        print(f"Linescore fetch failed, defaulting score_diff=0: {e}", flush=True)
+        score_diff = 0
+
     return {
-        "pitcher": current_play["matchup"].get("pitcher", {}).get("id", "None"),
-        "batter":  current_play["matchup"].get("batter",  {}).get("id", "None"),
-        "on_1b": int("postOnFirst"  in current_play["matchup"]),
-        "on_2b": int("postOnSecond" in current_play["matchup"]),
-        "on_3b": int("postOnThird"  in current_play["matchup"]),
-        "if_fielding_alignment": current_play["matchup"].get("ifFieldingAlignment", "standard"),
-        "of_fielding_alignment": current_play["matchup"].get("ofFieldingAlignment", "standard"),
+        "pitcher": str(matchup.get("pitcher", {}).get("id", "")),
+        "batter":  str(matchup.get("batter",  {}).get("id", "")),
+        "on_1b": on_1b,
+        "on_2b": on_2b,
+        "on_3b": on_3b,
+        "if_fielding_alignment": matchup.get("ifFieldingAlignment", "standard"),
+        "of_fielding_alignment": matchup.get("ofFieldingAlignment", "standard"),
         "prev_pitch_type": prev_pitch_type,
         "inning":       current_play["about"].get("inning"),
         "balls":        current_play["count"].get("balls"),
         "strikes":      current_play["count"].get("strikes"),
         "outs_when_up": current_play["count"].get("outs"),
-        "score_diff":   home_score - away_score,
+        "score_diff":   score_diff,
     }
+
+# ── Routes ──
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui():
@@ -400,38 +565,80 @@ async def serve_ui():
 
 @app.get("/fingerprint")
 async def fingerprint():
-    """Lightweight endpoint — returns a fingerprint of the current game state.
-    The frontend polls this every few seconds; only calls /predict when it changes."""
-    game_id = get_game_id()
-    if not game_id:
-        return JSONResponse({"fingerprint": None, "no_game": True})
-    all_plays = get_live_feed(game_id)
-    if not all_plays:
+    try:
+        game_id = get_game_id()
+        if not game_id:
+            return JSONResponse({"fingerprint": None, "no_game": True})
+        all_plays = get_live_feed(game_id)
+        if not all_plays:
+            return JSONResponse({"fingerprint": None, "no_game": False})
+        current_play = all_plays[-1]
+        play_idx = current_play.get("atBatIndex", 0)
+        pitch_count = len(current_play.get("playEvents", []))
+        fp = f"{play_idx}-{pitch_count}"
+        return JSONResponse({"fingerprint": fp, "no_game": False})
+    except Exception as e:
+        print(f"Fingerprint error: {e}", flush=True)
         return JSONResponse({"fingerprint": None, "no_game": False})
-    current_play = all_plays[-1]
-    play_idx = current_play.get("atBatIndex", 0)
-    pitch_count = len(current_play.get("playEvents", []))
-    fp = f"{play_idx}-{pitch_count}"
-    return JSONResponse({"fingerprint": fp, "no_game": False})
+
+@app.get("/next-game")
+async def next_game():
+    """Returns info about the next scheduled Padres game, for the no-game banner."""
+    try:
+        # First check if there IS a live game right now
+        game_id = get_game_id()
+        if game_id:
+            return JSONResponse({"no_game_today": False})
+        info = get_next_game_info()
+        return JSONResponse(info)
+    except Exception as e:
+        print(f"Next game lookup error: {e}", flush=True)
+        return JSONResponse({"found": False, "no_game_today": True})
 
 @app.post("/predict")
 async def predict():
-    game_id = get_game_id()
-    all_plays = get_live_feed(game_id) if game_id else []
-    data = build_context(all_plays)
-    used_fallback = data is None
-    if used_fallback:
-        data = FALLBACK_DATA.copy()
-    input_df = pd.DataFrame([data])
-    prediction = model.predict(input_df)
-    pitch_code = ENCODE_DICT.get(prediction[0], "FF")
+    data = None
+    try:
+        game_id = get_game_id()
+        if game_id:
+            all_plays = get_live_feed(game_id)
+            data = build_context(all_plays, game_id)
+            print(f"Live context built: {data}", flush=True)
+        else:
+            print("No game in progress.", flush=True)
+    except Exception as e:
+        print(f"Error fetching live data: {e}", flush=True)
+        data = None
+
+    # No live game — tell the frontend to show the banner instead
+    if data is None:
+        return JSONResponse({"no_game": True})
+
+    pitch_code = "FF"
+    try:
+        input_df = pd.DataFrame([data])
+        prediction = model.predict(input_df)
+        pitch_code = ENCODE_DICT.get(prediction[0], "FF")
+        print(f"Model predicted: {pitch_code}", flush=True)
+    except Exception as e:
+        print(f"Model prediction error: {e}", flush=True)
+
     pitch_name = CODE_TO_NAME.get(pitch_code, "Unknown")
+
     pitcher_name = batter_name = None
     try:
         pitcher_info = statsapi.get("person", {"personId": data["pitcher"]})
         pitcher_name = pitcher_info["people"][0]["fullName"]
         batter_info  = statsapi.get("person", {"personId": data["batter"]})
         batter_name  = batter_info["people"][0]["fullName"]
-    except Exception:
-        pass
-    return JSONResponse({"pitch_code": pitch_code, "pitch_name": pitch_name, "pitcher_name": pitcher_name, "batter_name": batter_name, "inputs": data, "fallback": used_fallback})
+    except Exception as e:
+        print(f"Player name lookup failed: {e}", flush=True)
+
+    return JSONResponse({
+        "no_game": False,
+        "pitch_code": pitch_code,
+        "pitch_name": pitch_name,
+        "pitcher_name": pitcher_name,
+        "batter_name": batter_name,
+        "inputs": data,
+    })

@@ -8,3 +8,4 @@ statsmodels
 joblib
 uvicorn
 fastapi
+pytz
