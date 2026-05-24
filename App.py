@@ -428,34 +428,28 @@ function runDemo(){
 # ── Helpers ──
 
 def get_game_id():
-    try:
-        schedule = statsapi.schedule(
-            start_date=date.today(),
-            end_date=date.today(),
-            team=str(PADRES_ID),
-            sportId=1
-        )
+    schedule = statsapi.schedule(
+        start_date=date.today(),
+        end_date=date.today(),
+        team=str(PADRES_ID),
+        sportId=1
+    )
 
-        print("=== SCHEDULE DEBUG ===", flush=True)
+    for game in schedule:
+        print(game, flush=True)
 
-        for game in schedule:
-            print(game, flush=True)
+        detailed = str(game.get("status", "")).lower()
 
-            # MOST IMPORTANT FIELD
-            state = game.get("abstractGameState", "")
+        if any(x in detailed for x in [
+            "progress",
+            "live",
+            "top",
+            "bottom",
+            "mid"
+        ]):
+            return game["game_id"]
 
-            print(f"STATE = {state}", flush=True)
-
-            if state == "Live":
-                print(f"FOUND LIVE GAME: {game['game_id']}", flush=True)
-                return game["game_id"]
-
-        print("NO LIVE GAME FOUND", flush=True)
-        return None
-
-    except Exception as e:
-        print(f"get_game_id error: {e}", flush=True)
-        return None
+    return None
 
 def get_live_feed(game_id):
     live_feed = statsapi.get("game_playByPlay", {"gamePk": game_id})
