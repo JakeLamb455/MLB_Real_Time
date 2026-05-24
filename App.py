@@ -429,9 +429,11 @@ function runDemo(){
 
 def get_game_id():
     schedule = statsapi.schedule(start_date=date.today(), end_date=date.today(), team=str(PADRES_ID), sportId=1)
-    # Only return a game_id if the game is actually in progress (status = "In Progress")
+    NOT_LIVE = {"Final", "Game Over", "Completed Early", "Postponed", "Cancelled",
+                "Preview", "Pre-Game", "Warmup", "Scheduled"}
     for game in schedule:
-        if game.get("status") == "In Progress":
+        print(f"Game status: '{game.get('status')}' — ID: {game.get('game_id')}", flush=True)
+        if game.get("status") not in NOT_LIVE:
             return game["game_id"]
     return None
 
@@ -455,12 +457,13 @@ def get_next_game_info():
             )
         except Exception:
             continue
+        
+        NOT_LIVE = {"Final", "Game Over", "Completed Early", "Postponed", "Cancelled",
+            "Preview", "Pre-Game", "Warmup", "Scheduled"}
 
         for game in schedule:
-            status = game.get("status", "")
-            # Skip games already finished or in progress
-            if status in ("Final", "Game Over", "In Progress", "Completed Early"):
-                continue
+            if game.get("status") not in NOT_LIVE:
+                continue  # skip live or unknown-status games
 
             game_id = game["game_id"]
             home_id = game.get("home_id")
