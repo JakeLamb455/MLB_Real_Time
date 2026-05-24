@@ -1,11 +1,11 @@
 pandas
 numpy
-scikit-learn
 xgboost
 mlb-statsapi
 pybaseball
 statsmodels
-joblib
 uvicorn
 fastapi
 pytz
+scikit-learn==1.6.1
+joblib==1.4.2

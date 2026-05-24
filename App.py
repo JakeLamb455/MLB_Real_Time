@@ -425,6 +425,21 @@ function runDemo(){
 </html>
 """
 
+@app.get("/raw-mlb")
+async def raw_mlb():
+    today = date.today().strftime("%Y-%m-%d")
+
+    data = statsapi.get(
+        "schedule",
+        {
+            "sportId": 1,
+            "date": today,
+            "hydrate": "team,linescore"
+        }
+    )
+
+    return JSONResponse(data)
+
 # ── Helpers ──
 
 def get_game_id():
@@ -435,40 +450,52 @@ def get_game_id():
             "schedule",
             {
                 "sportId": 1,
-                "teamId": PADRES_ID,
                 "date": today,
-                "hydrate": "linescore"
+                "hydrate": "team,linescore"
             }
         )
 
-        dates = data.get("dates", [])
-
-        for d in dates:
+        for d in data.get("dates", []):
             for game in d.get("games", []):
 
-                status = (
-                    game.get("status", {})
-                    .get("abstractGameState", "")
-                )
+                home_id = game["teams"]["home"]["team"]["id"]
+                away_id = game["teams"]["away"]["team"]["id"]
 
-                detailed = (
-                    game.get("status", {})
-                    .get("detailedState", "")
-                )
+                if PADRES_ID not in [home_id, away_id]:
+                    continue
 
-                game_pk = game.get("gamePk")
+                game_pk = game["gamePk"]
+
+                abstract = game["status"]["abstractGameState"]
+                detailed = game["status"]["detailedState"]
 
                 print(
                     f"GAME {game_pk} | "
-                    f"STATE={status} | "
+                    f"ABSTRACT={abstract} | "
                     f"DETAIL={detailed}",
                     flush=True
                 )
 
-                if status == "Live":
-                    print(f"LIVE GAME FOUND: {game_pk}", flush=True)
+                # THIS is the important change
+                LIVE_STATES = [
+                    "Live",
+                    "Manager Challenge",
+                    "Delayed",
+                ]
+
+                if (
+                    abstract == "Live"
+                    or detailed in LIVE_STATES
+                    or "In Progress" in detailed
+                ):
                     return game_pk
 
+        return None
+
+
+
+    except Exception as e:
+        print(f"get_game_id error: {e}", flush=True)
         return None
 
     except Exception as e:
