@@ -428,13 +428,25 @@ function runDemo(){
 # ── Helpers ──
 
 def get_game_id():
-    schedule = statsapi.schedule(start_date=date.today(), end_date=date.today(), team=str(PADRES_ID), sportId=1)
-    NOT_LIVE = {"Final", "Game Over", "Completed Early", "Postponed", "Cancelled",
-                "Preview", "Pre-Game", "Warmup", "Scheduled"}
+    schedule = statsapi.schedule(
+        start_date=date.today(),
+        end_date=date.today(),
+        team=str(PADRES_ID),
+        sportId=1
+    )
+
     for game in schedule:
-        print(f"Game status: '{game.get('status')}' — ID: {game.get('game_id')}", flush=True)
-        if game.get("status") not in NOT_LIVE:
+        state = game.get("abstractGameState", "")
+
+        print(
+            f"abstractGameState={state} "
+            f"status={game.get('status')}",
+            flush=True
+        )
+
+        if state == "Live":
             return game["game_id"]
+
     return None
 
 def get_live_feed(game_id):
